@@ -25,11 +25,35 @@ Refresh strategy can be customized by setting the
 pre-aggregation.
 
 The default value of `refreshKey` is `every: '1 hour'`. It can be redefined
-either by providing SQL:
+either by overriding the default value of the [`every`
+property][ref-schema-ref-preaggs-refresh-key-every]:
 
 ```javascript
 cube(`Orders`, {
-  // ...
+
+  ...,
+
+  preAggregations: {
+    amountByCreated: {
+      type: `rollup`,
+      measures: [amount],
+      timeDimension: createdAt,
+      granularity: `month`,
+      refreshKey: {
+        every: `12 hour`,
+      },
+    },
+  },
+});
+```
+
+Or by providing a [`sql` property][ref-schema-ref-preaggs-refresh-key-sql]
+instead, and leaving `every` unchanged from its' default value:
+
+```javascript
+cube(`Orders`, {
+
+  ...,
 
   preAggregations: {
     amountByCreated: {
@@ -37,6 +61,7 @@ cube(`Orders`, {
       timeDimension: createdAt,
       granularity: `month`,
       refreshKey: {
+        // every will default to `10 seconds` here
         sql: `SELECT MAX(created_at) FROM orders`,
       },
     },
@@ -44,11 +69,12 @@ cube(`Orders`, {
 });
 ```
 
-Or by providing a refresh time interval:
+Or even use both together:
 
 ```javascript
 cube(`Orders`, {
-  // ...
+
+  ...,
 
   preAggregations: {
     amountByCreated: {
@@ -57,6 +83,7 @@ cube(`Orders`, {
       granularity: `month`,
       refreshKey: {
         every: `12 hour`,
+        sql: `SELECT MAX(created_at) FROM orders`,
       },
     },
   },
@@ -79,7 +106,8 @@ practices on running background refresh in production environments.
 
 ```js
 cube(`Orders`, {
-  // ...
+
+  ...,
 
   preAggregations: {
     amountByCreated: {
@@ -384,6 +412,8 @@ When using cloud storage, it is important to correctly configure any data
 retention policies to clean up the data in the export bucket as Cube.js does not
 currently manage this. For most use-cases, 1 day is sufficient.
 
+[ref-caching-in-mem-default-refresh-key]:
+  /caching#in-memory-cache-default-refresh-keys
 [ref-config-connect-db]: /connecting-to-the-database
 [ref-config-driverfactory]: /config#options-reference-driver-factory
 [ref-config-env]: /reference/environment-variables#cube-store
@@ -400,6 +430,10 @@ currently manage this. For most use-cases, 1 day is sufficient.
 [ref-schema-ref-preaggs]: /schema/reference/pre-aggregations
 [ref-schema-ref-preaggs-refresh-key]:
   /schema/reference/pre-aggregations#parameters-refresh-key
+[ref-schema-ref-preaggs-refresh-key-every]:
+  /schema/reference/pre-aggregations#parameters-refresh-key-every
+[ref-schema-ref-preaggs-refresh-key-sql]:
+  /schema/reference/pre-aggregations#parameters-refresh-key-sql
 [ref-deploy-refresh-wrkr]: /deployment/overview#refresh-worker
 [ref-schema-ref-preaggs-sched-refresh]:
   /schema/reference/pre-aggregations#parameters-scheduled-refresh
